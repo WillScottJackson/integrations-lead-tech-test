@@ -16,3 +16,6 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <atlstr.h>
+#include <wchar.h>
+#include <filesystem>

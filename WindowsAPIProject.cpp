@@ -1,23 +1,12 @@
 // WindowsAPIProject.cpp : Defines the entry point for the application.
 //
-
-#include "framework.h"
 #include "WindowsAPIProject.h"
+#include "Logging.h"
 
-#define MAX_LOADSTRING 100
-#define MIN_WINDOW_WIDTH 200;
-#define MIN_WINDOW_HEIGHT 150;
-
-// Global Variables:
-HINSTANCE hInst;                                  // current instance
-WCHAR szTitle[ MAX_LOADSTRING ];                  // The title bar text
-WCHAR szWindowClass[ MAX_LOADSTRING ];            // the main window class name
-
-// Forward declarations of functions:
-ATOM                MyRegisterClass( HINSTANCE hInstance );
-BOOL                InitInstance( HINSTANCE, int );
-LRESULT CALLBACK    WndProc( HWND, UINT, WPARAM, LPARAM );
-INT_PTR CALLBACK    About( HWND, UINT, WPARAM, LPARAM );
+auto windowWidth = MIN_WINDOW_WIDTH;
+auto windowHeight = MIN_WINDOW_HEIGHT;
+auto windowX = 0;
+auto windowY = 0;
 
 int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -28,6 +17,30 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER( lpCmdLine );
 
 	// TODO: Place code here.
+	const std::string logFilename = "Log.txt";
+	Logging logFile = Logging(logFilename);
+
+	logFile.Log(Logging::LoggingLevel::info, __func__, "Application Starting");
+
+	// Attempt to open a .ini file containing the width, height, x and y coordinates of the window 
+	constexpr auto configFile		= _T("C://Users//willi//integrations-lead-tech-test//config.ini");
+	constexpr auto settingsSection	= _T("Settings");
+	constexpr auto windowWidthTag	= _T("WindowWidth");
+	constexpr auto windowHeightTag	= _T("WindowHeight");
+	constexpr auto windowXTag		= _T("WindowX");
+	constexpr auto windowYTag		= _T("WindowY");
+
+	// Had to retarget to C++17 minimum for this feature
+	if (!std::filesystem::exists(configFile))
+	{
+		std::fstream config(configFile, std::ios::out | std::ios::in);
+		config.close();
+	}
+		
+	windowWidth = GetPrivateProfileInt(settingsSection, windowWidthTag, MIN_WINDOW_WIDTH, configFile);
+	windowHeight = GetPrivateProfileInt(settingsSection, windowHeightTag, MIN_WINDOW_HEIGHT, configFile);
+	windowX = GetPrivateProfileInt(settingsSection, windowXTag, MIN_WINDOW_HEIGHT, configFile);
+	windowY = GetPrivateProfileInt(settingsSection, windowYTag, MIN_WINDOW_HEIGHT, configFile);
 
 	// Initialize global strings
 	LoadStringW( hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING );
@@ -37,10 +50,10 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 	// Perform application initialization:
 	if ( !InitInstance( hInstance, nCmdShow ) )
 	{
-		return FALSE;
+		return static_cast<int>(FALSE);
 	}
 
-	HACCEL hAccelTable = LoadAccelerators( hInstance, MAKEINTRESOURCE( IDC_WINDOWSAPIPROJECT ) );
+	auto hAccelTable = LoadAccelerators( hInstance, MAKEINTRESOURCE( IDC_WINDOWSAPIPROJECT ) );
 
 	MSG msg;
 
@@ -54,10 +67,21 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 		}
 	}
 
-	return (int)msg.wParam;
+	auto str = std::to_wstring(windowWidth);
+	LPCWSTR w = str.c_str();
+	WritePrivateProfileString(settingsSection, windowWidthTag, w, configFile);
+	str = std::to_wstring(windowHeight);
+	w = str.c_str();
+	WritePrivateProfileString(settingsSection, windowHeightTag, w, configFile);
+	str = std::to_wstring(windowX);
+	w = str.c_str();
+	WritePrivateProfileString(settingsSection, windowXTag, w, configFile);
+	str = std::to_wstring(windowY);
+	w = str.c_str();
+	WritePrivateProfileString(settingsSection, windowYTag, w, configFile);
+
+	return static_cast<int>(msg.wParam);
 }
-
-
 
 //
 //  FUNCTION: MyRegisterClass()
@@ -99,8 +123,8 @@ BOOL InitInstance( HINSTANCE hInstance, int nCmdShow )
 {
 	hInst = hInstance; // Store instance handle in our global variable
 
-	HWND hWnd = CreateWindowW( szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr );
+	auto hWnd = CreateWindowW( szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+		windowX, windowY, windowWidth, windowHeight, nullptr, nullptr, hInstance, nullptr );
 
 	if ( !hWnd )
 	{
@@ -153,12 +177,19 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	}
 	break;
 	case WM_DESTROY:
-		PostQuitMessage( 0 );
+		RECT rect;
+		// Get the current dimensions and positions of the windows before it closes to write out to the config file
+		GetWindowRect(hWnd, &rect);
+		windowWidth = rect.right - rect.left;
+		windowHeight = rect.bottom - rect.top;
+		windowX = rect.left;
+		windowY = rect.top;
+		PostQuitMessage( WM_QUIT );
 		break;
 	default:
 		return DefWindowProc( hWnd, message, wParam, lParam );
 	}
-	return 0;
+	return IDOK;
 }
 
 // Message handler for about box.
@@ -168,15 +199,15 @@ INT_PTR CALLBACK About( HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam )
 	switch ( message )
 	{
 	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
+		return static_cast<INT_PTR>(TRUE);
 
 	case WM_COMMAND:
 		if ( LOWORD( wParam ) == IDOK || LOWORD( wParam ) == IDCANCEL )
 		{
 			EndDialog( hDlg, LOWORD( wParam ) );
-			return (INT_PTR)TRUE;
+			return static_cast<INT_PTR>(TRUE);
 		}
 		break;
 	}
-	return (INT_PTR)FALSE;
+	return static_cast<INT_PTR>(FALSE);
 }

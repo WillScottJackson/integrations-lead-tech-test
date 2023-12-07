@@ -1,36 +1,14 @@
-# Introduction
-This repository contains a skeleton C++ project for an application with a GUI that runs on Windows. The application was written by one of the engineers at Mirada who would like support in taking the application further.
-
-# Brief
-This technical challenge consists of two tasks.
-
-## Part 1: Review the code
-Review the code in this repository, and provide feedback and suggestions for the developer. You may wish to do this in the form of comments on a pull request or feedback in an email.
-
-We will be looking at your assessment and suggestions for the code, as well as how the feedback is communicated to the engineer. 
-
-## Part 2: Expand the functionality
-We would like you to add the following to the provided application:
-- Logging to a log file.
-- Functionality for user configuration of the size and position of the GUI window via a configuration file. The file should be created if it does not yet exist; it should be read on start of the program to set the initial window size and position; it should be updated with the final size and position of the Window before it is destroyed.
-- Handling of various Windows messages to enforce minimum dimensions on the window and prevent any part of the window from being moved off-screen.
-
-Assume that the entire project is editable. 
-
-We will be looking for
-- Awareness of crucial information for troubleshooting
-- Consideration of the user experience
-- Effective event handling and suitable error handling
-- Clean and maintainable C++ code
-
-# Getting started
-- Please either fork or download a copy of this repository
-- Visual Studio should be installed with the Desktop development with C++ workload. If you haven't already installed Visual Studio, go to https://visualstudio.microsoft.com/downloads/ to install Visual Studio Community for free. If you need to install the workload but already have Visual Studio, go to Tools > Get Tools and Features... to open the Visual Studio Installer, then choose Desktop development with C++ workload and Modify.
-- Open the project in Visual Studio Community from its .vcxproj file.
-- If prompted to target the latest Microsoft toolset, retarget the Windows SDK Version and platform toolset for the project.
-- Click the left margin to set a breakpoint. Start the debugger by presssing F5 (Debug > Start Debugging) or the Start Debugging button (green triangle) in the Debug Toolbar.
-- Put any assumptions, notes or instructions into your README.md. 
-- When finished, provide us with a link to your repo or a zip of its contents 
-- If choosing to provide written feedback, please put it in a text document in the repo 
-
-We're eager to see you showcase your initiative and skills in your submission. Please get in touch if you need any help. Good luck with your test!
+1. Code Review and Changes 
+- My major criticism with this project is that it is built using MFC. This wouldn't be my first choice 
+of framework, I think using a more modern framework such as Qt would be far more beneficial, as it 
+is cross platform, continuously supported and uses modern C++ features.
+- I replaced instances of #define with constexpr for a few reasons, the first is type safety, the second is having the constant defined at compile time, the third is that I could encapsulate the constants in a namespace or as part of an enum so I can carefully manage their scope
+- The constants MIN_WINDOW_WIDTH and MIN_WINDOW_HEIGHT appeared to be unused, but I added them to the CreateWindowW function
+- The global variables should be encapsulated into another class or namespace so their scope can be carefully managed and they don't inadvertently cause problems. Possibly as a Singleton 
+- For the sake of type safety, I replaced C-style casts with static casts where appropriate. 
+- There are a few "magic numbers" in the code which don't have any explanation, for example GetMessage() in wWinMain. These should either be replaced with the appropriate MFC constants, or constants should be defined to make their meaning clear 
+- Is it possible for MSG msg to be remain unitialized in wWinMain() should the first call of GetMessage() fail and not write to msg? If so it could be possible that the return code could be uninitialized
+- There were a few more "magic numbers" in WndProc for the return codes, I think 0 was in appropriate based on the context, so I replaced them with what I think are the appropriate codes. 
+- For the sake of readability and tidiness I moved some of the forward declarations and constant definitions to the .h file 
+- There's a style inconsistency in WndProc, in CASE WM_PAINT, some code is encapsulated within braces {}
+, this isn't needed as the variables declared within the case, are within a new scope anyway and will be destroyed when you leave the scope of the case WM_PAINT. However, if it is being used for scope limitation, preventing fallthrough etc. it's best to use it in every case 
